@@ -4,6 +4,7 @@
 
 
 from insanity.sanity_checks import sanitize_type
+from insanity.sanity_checks import sanitize_value
 
 
 __author__ = "Patrick Hohenecker"
