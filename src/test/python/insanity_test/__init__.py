@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""This package contains the tests for the eponymous package of the implementation."""
+"""This package contains the tests for the package ``insanity``."""
 
 
 __author__ = "Patrick Hohenecker"

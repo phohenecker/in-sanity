@@ -3,6 +3,9 @@
 """This package implements various common sanity checks for function arguments."""
 
 
+from insanity.sanity_checks import sanitize_type
+
+
 __author__ = "Patrick Hohenecker"
 __copyright__ = (
         "Copyright (c) 2017 Patrick Hohenecker"
