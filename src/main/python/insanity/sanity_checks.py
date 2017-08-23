@@ -4,6 +4,7 @@
 
 
 import collections
+import numbers
 import operator
 import typing
 
@@ -60,6 +61,113 @@ def _fully_qualified_name(t: type) -> str:
         prefix = t.__module__ + "."
 
     return prefix + t.__name__
+
+
+def sanitize_range(
+        arg_name: str,
+        arg_value: numbers.Number,
+        minimum: numbers.Number=None,
+        maximum: numbers.Number=None,
+        min_inclusive: bool=True,
+        max_inclusive: bool=True,
+        complement: bool=False,
+        error_msg: str=None
+) -> None:
+    """Examines whether the value of a numerical arg is within a certain range.
+
+    Args:
+        arg_name (str): The name of the parameter being sanitized.
+        arg_value (numbers.Number): The value that is subject of investigation.
+        minimum (numbers.Number, optional): The minimum value that ``arg_value`` may have.
+        maximum (numbers.Number, optional): The maximum value that ``arg_value`` may have.
+        min_inclusive (bool, optional): Indicates whether ``minimum`` is an admissible value.
+        max_inclusive (bool, optional): Indicates whether ``maximum` is an admissible value.
+        complement (bool, optional): If ``True``, then values of the specified range are interpreted as prohibited
+            rather than admissible.
+        error_msg (str, optional): An optional error message that is provided if an error is raised.
+
+    Raises:
+        ValueError: If ``arg_value`` is out-of-range.`
+        TypeError: If ``arg_value`` is not a number or if not at least one of ``minimum`` and ``maximum`` is provided.
+    """
+    # //////// Sanitize Args -------------------------------------------------------------------------------------------
+
+    sanitize_type("arg_name", arg_name, str)
+    sanitize_type("arg_value", arg_value, numbers.Number)
+    sanitize_type("minimum", minimum, numbers.Number, none_allowed=True)
+    sanitize_type("maximum", maximum, numbers.Number, none_allowed=True)
+    sanitize_type("min_inclusive", min_inclusive, bool)
+    sanitize_type("max_inclusive", max_inclusive, bool)
+    sanitize_type("complement", complement, bool)
+    sanitize_type("error_msg", error_msg, str, none_allowed=True)
+
+    if minimum is None and maximum is None:
+        raise TypeError("At least one of the parameters <minimum> and <maximum> has to be provided!")
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise ValueError(
+                "The parameter <minimum> must not be greater than <maximum>, but {} > {}!".format(
+                        minimum,
+                        maximum
+                )
+        )
+
+    # if only one boundary is provided, then we can simply exchange min-max in order to handle complement checks
+    if complement:
+        if minimum is None:
+            minimum = maximum
+            maximum = None
+            min_inclusive = not max_inclusive
+            complement = False
+        elif maximum is None:
+            maximum = minimum
+            minimum = None
+            max_inclusive = not min_inclusive
+            complement = False
+
+    # //////// Perform Requested Sanity Check --------------------------------------------------------------------------
+
+    # create error message
+    if complement:
+        min_sym = "<" if min_inclusive else "<="
+        max_sym = ">" if max_inclusive else ">="
+    else:
+        min_sym = ">=" if min_inclusive else ">"
+        max_sym = "<=" if max_inclusive else "<"
+    if error_msg is None:
+        if minimum is None:
+            error_msg = "The parameter <{arg_name}> has to be {max_sym} {maximum}, but is {arg_value}!"
+        elif maximum is None:
+            error_msg = "The parameter <{arg_name}> has to be {min_sym} {minimum}, but is {arg_value}!"
+        else:
+            error_msg = \
+                    "The parameter <{arg_name}> has to be {min_sym} {minimum} " + \
+                    ("or " if complement else "and ") + \
+                    "{max_sym} {maximum}, " + \
+                    "but is {arg_value}!"
+    error_msg = error_msg.format(
+            arg_name=arg_name,
+            arg_value=arg_value,
+            minimum=minimum,
+            maximum=maximum,
+            min_sym=min_sym,
+            max_sym=max_sym
+    )
+
+    # check value and raise ValueError if it is out-of-range
+    out_of_range = (
+            (
+                    minimum is not None and
+                    ((min_inclusive and arg_value < minimum) or (not min_inclusive and arg_value <= minimum))
+            ) or
+            (
+                    maximum is not None and
+                    ((max_inclusive and arg_value > maximum) or (not max_inclusive and arg_value >= maximum))
+            )
+    )
+    if complement:
+        out_of_range = not out_of_range
+    if out_of_range:
+        raise ValueError(error_msg)
 
 
 def sanitize_type(

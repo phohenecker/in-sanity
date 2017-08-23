@@ -58,6 +58,58 @@ class SanityChecksTest(unittest.TestCase):
         self.assertEqual(san._fully_qualified_name(collections.Iterable), "collections.abc.Iterable")
 
     # noinspection PyTypeChecker
+    def test_sanitize_range(self):
+        # CHECK: invoking the function with an illegal type causes a TypeError
+        with self.assertRaises(TypeError):
+            san.sanitize_range(0, 1, minimum=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", "0", minimum=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, minimum="0")
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, maximum="0")
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, minimum=0, error_msg=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, minimum=0, min_inclusive=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, minimum=0, max_inclusive=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1, minimum=0, complement=0)
+
+        # CHECK: leaving both minimum and maximum unspecified causes a TypeError
+        with self.assertRaises(TypeError):
+            san.sanitize_range("some_arg", 1)
+
+        # CHECK: providing a minimum > maximum causes a ValueError
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 1, minimum=2, maximum=1)
+
+        # CHECK: providing an out-of-range value causes a ValueError
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", -1, minimum=0, maximum=2, min_inclusive=True, complement=False)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 0, minimum=0, maximum=2, min_inclusive=False, complement=False)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 3, minimum=0, maximum=2, max_inclusive=True, complement=False)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 2, minimum=0, maximum=2, max_inclusive=False, complement=False)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 0, minimum=0, maximum=2, min_inclusive=True, complement=True)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 1, minimum=0, maximum=2, min_inclusive=True, complement=True)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 2, minimum=0, maximum=2, max_inclusive=True, complement=True)
+        with self.assertRaises(ValueError):
+            san.sanitize_range("some_arg", 1, minimum=0, maximum=2, max_inclusive=False, complement=True)
+
+        # CHECK: providing an in-range value causes no error
+        san.sanitize_range("some_arg", 0, minimum=0, maximum=2, min_inclusive=True)
+        san.sanitize_range("some_arg", 1, minimum=0, maximum=2, min_inclusive=False)
+        san.sanitize_range("some_arg", 2, minimum=0, maximum=2, max_inclusive=True)
+        san.sanitize_range("some_arg", 1, minimum=0, maximum=2, max_inclusive=False)
+
+    # noinspection PyTypeChecker
     def test_sanitize_type(self):
         # CHECK: invoking the function with an arg of an illegal type causes a TypeError
         with self.assertRaises(TypeError):
