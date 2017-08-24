@@ -39,8 +39,56 @@ __email__ = "mail@paho.at"
 __status__ = "Development"
 
 
-class SanityChecksTest(unittest.TestCase):
+class IterableCheckFunctionsTest(unittest.TestCase):
     """This class implements the tests for the module ``insanity.iterable_check_functions``."""
+
+    # noinspection PyTypeChecker
+    def test_sanitize_range_fn(self):
+        # CHECK: invoking the function with an illegal type causes a TypeError
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn(0, minimum=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", minimum="0")
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", maximum="0")
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", minimum=0, error_msg=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", minimum=0, min_inclusive=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", minimum=0, max_inclusive=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg", minimum=0, complement=0)
+
+        # CHECK: leaving both minimum and maximum unspecified causes a TypeError
+        with self.assertRaises(TypeError):
+            fn.sanitize_range_fn("some_arg")
+
+        # CHECK: providing a minimum > maximum causes a ValueError
+        with self.assertRaises(ValueError):
+            fn.sanitize_range_fn("some_arg", minimum=2, maximum=1)
+
+        # CHECK: providing an in-range value causes no error
+        ins.sanitize_iterable(
+                "some_arg",
+                [0],
+                element_check_fn=fn.sanitize_range_fn("some_arg", minimum=0, maximum=2, min_inclusive=True)
+        )
+        ins.sanitize_iterable(
+                "some_arg",
+                [1],
+                element_check_fn=fn.sanitize_range_fn("some_arg", minimum=0, maximum=2, min_inclusive=False)
+        )
+        ins.sanitize_iterable(
+                "some_arg",
+                [2],
+                element_check_fn=fn.sanitize_range_fn("some_arg", minimum=0, maximum=2, max_inclusive=True)
+        )
+        ins.sanitize_iterable(
+                "some_arg",
+                [1],
+                element_check_fn=fn.sanitize_range_fn("some_arg", minimum=0, maximum=2, max_inclusive=False)
+        )
 
     # noinspection PyTypeChecker
     def test_sanitize_value_fn(self):

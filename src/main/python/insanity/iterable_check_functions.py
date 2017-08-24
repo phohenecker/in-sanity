@@ -43,6 +43,81 @@ __email__ = "mail@paho.at"
 __status__ = "Development"
 
 
+def sanitize_range_fn(
+        arg_name: str,
+        minimum: numbers.Number=None,
+        maximum: numbers.Number=None,
+        min_inclusive: bool=True,
+        max_inclusive: bool=True,
+        complement: bool=False,
+        error_msg: str=None
+) -> typing.Callable[[typing.Any], None]:
+    """Retrieves a function that replicates :func:`insanity.sanity_checks.sanitize_range` with all of its args
+    except ``arg_value`` predefined to the given parameters.
+
+    Args:
+        The parameters resemble exactly those eponymous parameters of :func:`insanity.sanity_checks.sanitize_range`.
+
+    Returns:
+        The created function.
+    """
+    # //////// Sanitize Args -------------------------------------------------------------------------------------------
+
+    san.sanitize_type("arg_name", arg_name, str)
+    san.sanitize_type("minimum", minimum, numbers.Number, none_allowed=True)
+    san.sanitize_type("maximum", maximum, numbers.Number, none_allowed=True)
+    san.sanitize_type("min_inclusive", min_inclusive, bool)
+    san.sanitize_type("max_inclusive", max_inclusive, bool)
+    san.sanitize_type("complement", complement, bool)
+    san.sanitize_type("error_msg", error_msg, str, none_allowed=True)
+
+    if minimum is None and maximum is None:
+        raise TypeError("At least one of the parameters <minimum> and <maximum> has to be provided!")
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise ValueError(
+                "The parameter <minimum> must not be greater than <maximum>, but {} > {}!".format(
+                        minimum,
+                        maximum
+                )
+        )
+
+    # //////// Create Check Function -----------------------------------------------------------------------------------
+
+    # create error message
+    if error_msg is None:
+        if complement:
+            min_sym = "<" if min_inclusive else "<="
+            max_sym = ">" if max_inclusive else ">="
+        else:
+            min_sym = ">=" if min_inclusive else ">"
+            max_sym = "<=" if max_inclusive else "<"
+        if error_msg is None:
+            if minimum is None:
+                error_msg = \
+                        "The elements of <{arg_name}> have to be " + max_sym + "{maximum}, but {arg_value} was found!"
+            elif maximum is None:
+                error_msg = \
+                        "The elements of <{arg_name}> have to be " + min_sym + " {minimum}, but {arg_value} was found!"
+            else:
+                error_msg = \
+                        "The elements in <{arg_name}> have to be " + min_sym + " {minimum} " + \
+                        ("or " if complement else "and ") + \
+                        max_sym + " {maximum}, " + \
+                        "but {arg_value} was found!"
+
+    # create check function
+    return lambda x: san.sanitize_range(
+            arg_name,
+            x,
+            minimum=minimum,
+            maximum=maximum,
+            min_inclusive=min_inclusive,
+            max_inclusive=max_inclusive,
+            complement=complement,
+            error_msg=error_msg
+    )
+
+
 def sanitize_value_fn(
         arg_name: str,
         target_value,
