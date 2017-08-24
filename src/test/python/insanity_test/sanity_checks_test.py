@@ -46,6 +46,11 @@ class SanityChecksTest(unittest.TestCase):
         """Computes whether two integers are equal modulo 2."""
         return (x - y) % 2 == 0
 
+    @staticmethod
+    def eq_mod_2_check(x, y):
+        if not SanityChecksTest.eq_mod_2(x, y):
+            raise ValueError("{} != {} mod 2".format(x, y))
+
     # noinspection PyTypeChecker
     def test_fully_qualified_name(self):
         # CHECK: providing an arg that is not a type causes a TypeError
@@ -56,6 +61,63 @@ class SanityChecksTest(unittest.TestCase):
         self.assertEqual(san._fully_qualified_name(str), "builtins.str")
         self.assertEqual(san._fully_qualified_name(type), "builtins.type")
         self.assertEqual(san._fully_qualified_name(collections.Iterable), "collections.abc.Iterable")
+
+    # noinspection PyTypeChecker
+    def test_sanitize_iterable(self):
+        # CHECK: invoking the function with an arg of an illegal type causes a TypeError
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable(0, ["some_value"], elements_type=str)
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", 0, elements_type=str)
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], elements_type=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], target_length="0")
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], min_length="0")
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], max_length="0")
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], elements_type=str, none_elements_allowed=0)
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], error_msg=0)
+
+        # CHECK: invoking the function with incompatible args causes a ValueError/TypeError
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", [0, 1, 2])
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], target_length=3, min_length=2, max_length=4)
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], min_length=5, max_length=4)
+
+        # CHECK: providing a list with elements of illegal type causes a TypeError
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], elements_type=int)
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value"], elements_type=[int, float])
+        with self.assertRaises(TypeError):
+            san.sanitize_iterable("some_arg", ["some_value", None], elements_type=int, none_elements_allowed=False)
+
+        # CHECK: providing a list of illegal length causes a ValueError
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], target_length=2)
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], target_length=4)
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], min_length=4)
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], max_length=2)
+
+        # CHECK: providing a list that is illegal w.r.t. to a custom sanity check causes a ValueError
+        with self.assertRaises(ValueError):
+            san.sanitize_iterable("some_arg", [0, 1, 2], element_check_fn=(lambda x: self.eq_mod_2_check(x, 0)))
+
+        # CHECK: providing a list with legal elements causes no error
+        san.sanitize_iterable("some_arg", [0, 1, 2], elements_type=int, max_length=3)
+        san.sanitize_iterable("some_arg", [0, None, 2], elements_type=int, max_length=3, none_elements_allowed=True)
+        san.sanitize_iterable("some_arg", [0, 1, "2"], elements_type=[int, str], min_length=2, max_length=4)
+        san.sanitize_iterable("some_arg", None, elements_type=int, none_allowed=True)
+        san.sanitize_iterable("some_arg", [0, 2, 4], element_check_fn=(lambda x: self.eq_mod_2_check(x, 0)))
 
     # noinspection PyTypeChecker
     def test_sanitize_range(self):

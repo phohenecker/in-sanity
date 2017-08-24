@@ -63,6 +63,185 @@ def _fully_qualified_name(t: type) -> str:
     return prefix + t.__name__
 
 
+# noinspection PyTypeChecker
+def sanitize_iterable(
+        arg_name: str,
+        arg_value: collections.Iterable,
+        elements_type: typing.Union[type, typing.Iterable[type]]=None,
+        target_length: int=None,
+        min_length: int=None,
+        max_length: int=None,
+        none_allowed: bool=False,
+        none_elements_allowed: bool=False,
+        element_check_fn: typing.Callable[[typing.Any], typing.Any]=None,
+        error_msg: str=None
+) -> None:
+    """Sanitizes an ``Iterable`` as well as its elements.
+
+    For more advanced sanity checks of an ``Iterable``'s elements, ``element_check_fn`` accepts an arbitrary callable
+    that will be passed every element of ``arg_value``, and can thus be used to implement any kind of check. It is also
+    possible to use ``element_check_fn`` together with any of the built-in sanity checks, which will be executed first.
+    This way is it possible, e.g., to sanitize the type of the elements before any custom sanity checks are performed.
+
+    Args:
+        arg_name (str): The name of the parameter being sanitized.
+        arg_value (collections.Iterable): The ``Iterable`` that is subject of investigation.
+        elements_type (type or collections.Iterable[type], optional): A target type or an ``Iterable`` of types that
+            the elements of ``arg_value`` may have.
+        target_length (int, optional): The target length that ``arg_value`` is supposed to have. This option cannot be
+            combined with ``min_length`` or ``max_length``.
+        min_length (int, optional): The minimum length that ``arg_value`` is supposed to have.
+        max_length (int, optional): The maximum length that ``arg_value`` is supposed to have.
+        none_allowed (bool, optional): Indicates whether ``arg_value`` may be ``None``.
+        none_elements_allowed (bool, optional): Indicates whether elements of ``arg_value`` may be ``None``.
+        element_check_fn (optional): A callable that implements a custom sanity check. If provided, then it will be
+            applied to every element of ``arg_value``.
+        error_msg (str, optional): An optional error message that is provided if an error is raised.
+
+    Raises:
+        ValueError: If ``arg_value`` is not admissible.
+        TypeError: If ``arg_value`` is not an ``Iterable`` or if not at least one of ``elements_type``,
+            ``target_length``, ``min_length``, ``max_length``, and ``element_check_fn`` is provided.
+    """
+    # //////// Sanitize Args -------------------------------------------------------------------------------------------
+
+    sanitize_type("arg_name", arg_name, str)
+    sanitize_type("none_allowed", none_allowed, bool)
+    sanitize_type("arg_value", arg_value, collections.Iterable, none_allowed=none_allowed)
+
+    if elements_type is not None:
+        if isinstance(elements_type, collections.Iterable):
+            for t in elements_type:
+                sanitize_type(
+                        "elements_type",
+                        t,
+                        type,
+                        error_msg=(
+                                "The parameter <{arg_name}> has to be a type or an Iterable of types, "
+                                "but contains an element of type {arg_value_type}!"
+                        )
+                )
+        elif not isinstance(elements_type, type):
+            raise TypeError(
+                    "The parameter <elements_type> has to be a type or an Iterable of types, but is of type {}!".format(
+                            type(elements_type).__name__
+                    )
+            )
+
+    sanitize_type("target_length", target_length, int, none_allowed=True)
+    if target_length is not None:
+        sanitize_range("target_length", target_length, minimum=0)
+    sanitize_type("min_length", min_length, int, none_allowed=True)
+    if min_length is not None:
+        sanitize_range("min_length", min_length, minimum=0)
+    sanitize_type("max_length", max_length, int, none_allowed=True)
+    if max_length is not None:
+        sanitize_range("max_length", max_length, minimum=0)
+    sanitize_type("none_elements_allowed", none_elements_allowed, bool)
+    sanitize_type("error_msg", error_msg, str, none_allowed=True)
+
+    if element_check_fn is not None and not callable(element_check_fn):
+        raise TypeError("The parameter <element_check_fn> has to be callable!")
+
+    if (
+            elements_type is None and
+            target_length is None and
+            min_length is None and
+            max_length is None and
+            element_check_fn is None
+    ):
+        raise TypeError(
+                "At least one of the parameters <elements_type>, <target_length>, <min_length>, <max_length>, "
+                "and <element_check_fn> has to be specified!"
+        )
+
+    if (
+            arg_value is not None and
+            (target_length is not None or min_length is not None or max_length is not None) and
+            not isinstance(arg_value, collections.Sized)
+    ):
+        raise TypeError(
+                (
+                        "The parameter <arg_value> has to be an instance of collections.abc.Sized in order to "
+                        "perform length checks!"
+                )
+        )
+
+    if target_length is not None and (min_length is not None or max_length is not None):
+        raise ValueError(
+                "If <target_length> is specified, then neither <min_length> nor <max_length> must be provided."
+        )
+
+    # //////// Perform Requested Sanity Check --------------------------------------------------------------------------
+
+    # check if arg_value is acceptably None
+    if arg_value is None:
+        return
+
+    # create error messages
+    if error_msg is None:
+        none_err = "The elements of <{arg_name}> must not be None!"
+        if isinstance(elements_type, collections.Iterable):
+            type_err_msg = \
+                    "The types of the elements of <{arg_name}> have to be any of " + \
+                    "[" + ", ".join([t.__name__ for t in elements_type]) + "], " + \
+                    "but {arg_value_type} was encountered!"
+        else:
+            type_err_msg = (
+                    "The type of the elements of <{arg_name}> has to be {target_type}, "
+                    "but {arg_value_type} was encountered!"
+            )
+        len_err_msg = "The parameter <{arg_name}> has to be of length {target_value}, but has {arg_value} elements!"
+        len_range = (
+                ">= {min} and <= {max}"
+                if min_length is not None and max_length is not None else
+                (">= {min}" if min_length is not None else "<= {max}")
+        ).format(
+                min=min_length,
+                max=max_length
+        )
+        range_err_msg = "The length of parameter <{arg_name}> has to be " + len_range + ", but is {arg_value}!"
+    else:
+        none_err = error_msg
+        type_err_msg = error_msg
+        len_err_msg = error_msg
+        range_err_msg = error_msg
+
+    # check if arg_value contains illegal None-elements
+    if not none_elements_allowed and any([e is None for e in arg_value]):
+        raise TypeError(none_err.format(arg_name=arg_name))
+
+    # run through all elements of arg_value and check their types
+    if elements_type is not None:
+        for e in arg_value:
+            sanitize_type(arg_name, e, elements_type, none_allowed=none_elements_allowed, error_msg=type_err_msg)
+
+    # check length of arg_value
+    if target_length is not None:
+        sanitize_value(arg_name, len(arg_value), target_length, error_msg=len_err_msg)
+    if min_length is not None or max_length is not None:
+        sanitize_range(
+                arg_name,
+                len(arg_value),
+                minimum=min_length,
+                maximum=max_length,
+                min_inclusive=True,
+                max_inclusive=True,
+                error_msg=range_err_msg
+        )
+
+    # run custom sanity checks (if element_check_fn is provided)
+    if element_check_fn is not None:
+        try:
+            for e in arg_value:
+                if e is not None:
+                    element_check_fn(e)
+        except Exception as ex:
+            if error_msg is None:
+                error_msg = "The parameter <{arg_name}> contains illegal elements: {}"
+            raise ValueError(error_msg.format(str(ex), arg_name=arg_name))
+
+
 def sanitize_range(
         arg_name: str,
         arg_value: numbers.Number,
