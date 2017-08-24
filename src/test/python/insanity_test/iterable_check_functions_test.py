@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
+import unittest
+
+import insanity as ins
+
+from insanity import iterable_check_functions as fn
+
+
+__author__ = "Patrick Hohenecker"
+__copyright__ = (
+        "Copyright (c) 2017 Patrick Hohenecker"
+        "\n\n"
+        "Permission is hereby granted, free of charge, to any person obtaining a copy "
+        "of this software and associated documentation files (the \"Software\"), to deal "
+        "in the Software without restriction, including without limitation the rights "
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell "
+        "copies of the Software, and to permit persons to whom the Software is "
+        "furnished to do so, subject to the following conditions:"
+        "\n\n"
+        "The above copyright notice and this permission notice shall be included in all "
+        "copies or substantial portions of the Software."
+        "\n\n"
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR "
+        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, "
+        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE "
+        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
+        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, "
+        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE "
+        "SOFTWARE."
+)
+__license__ = "MIT License"
+__version__ = "2017.1"
+__date__ = "Aug 24, 2017"
+__maintainer__ = "Patrick Hohenecker"
+__email__ = "mail@paho.at"
+__status__ = "Development"
+
+
+class SanityChecksTest(unittest.TestCase):
+    """This class implements the tests for the module ``insanity.iterable_check_functions``."""
+
+    # noinspection PyTypeChecker
+    def test_sanitize_value_fn(self):
+        # CHECK: invoking the function with an arg of an illegal type causes a TypeError
+        with self.assertRaises(TypeError):
+            fn.sanitize_value_fn(0, "some_target_value")
+        with self.assertRaises(TypeError):
+            fn.sanitize_value_fn("some_arg", "some_target_value", complement=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_value_fn("some_arg", "some_target_value", expand_target=0)
+        with self.assertRaises(TypeError):
+            fn.sanitize_value_fn("some_arg",  "some_target_value", error_msg=0)
+
+        # CHECK: sanity check for an admissible arg_value causes no errors
+        ins.sanitize_iterable("some_arg", [0], element_check_fn=fn.sanitize_value_fn("some_arg", 0))
+        ins.sanitize_iterable("some_arg", [0], element_check_fn=fn.sanitize_value_fn("some_arg", [0, 1]))
+        ins.sanitize_iterable("some_arg", [0], element_check_fn=fn.sanitize_value_fn("some_arg", 1, complement=True))
+        ins.sanitize_iterable(
+                "some_arg", [0], element_check_fn=fn.sanitize_value_fn("some_arg", [1, 2], complement=True)
+        )
+        ins.sanitize_iterable(
+                "some_arg", [[0, 1]], element_check_fn=fn.sanitize_value_fn("some_arg", [0, 1], expand_target=False)
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

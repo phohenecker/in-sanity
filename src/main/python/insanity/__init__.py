@@ -3,6 +3,7 @@
 """This package implements various common sanity checks for function arguments."""
 
 
+from insanity.iterable_check_functions import sanitize_value_fn
 from insanity.sanity_checks import sanitize_iterable
 from insanity.sanity_checks import sanitize_range
 from insanity.sanity_checks import sanitize_type
