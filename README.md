@@ -3,7 +3,7 @@ in-sanity
 
 
 Even though it is sometimes considered to be "unpythonic", there are situations where we have to sanitize the value of a
-function parameter in some way or the other.
+function parameter in one way or the other.
 A common example is the implementation of complicated mathematical models, e.g., for machine learning.
 In a case like this, making assumptions about an arg explicit (by means of a sanity check) can often help to prevent
 bugs that are hard to find otherwise. 
