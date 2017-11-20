@@ -43,9 +43,18 @@ long_description = open("README.md").read()
 setup(
         author="Patrick Hohenecker",
         author_email="mail@paho.at",
-        classifiers=["Programming Language :: Python :: 3"],
+        classifiers=[
+                "License :: OSI Approved :: MIT License",
+                "Programming Language :: Python :: 3"
+        ],
+        copyright="Copyright (c) 2017 Patrick Hohenecker",
+        data_files=[
+                (".", ["LICENSE", "README.md"])
+        ],
         description="Implements various common sanity checks for function arguments.",
+        download_url="https://github.com/phohenecker/in-sanity/archive/v2017.1.tar.gz",
         install_requires=[],
+        license="MIT License",
         long_description=long_description,
         name="insanity",
         package_dir={"": "src/main/python"},
