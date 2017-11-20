@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # MIT License
 #
@@ -22,6 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# author:   Patrick Hohenecker <mail@paho.at>
+# version:  2017.1
+# date:     Aug 24, 2017
 
-export PYTHONPATH=`pwd`/src/main/python:$PYTHONPATH
+
+export PYTHONPATH=`pwd`/src/main/python:${PYTHONPATH}
 python3 -m unittest discover -s src/test/python -p "*_test.py"
