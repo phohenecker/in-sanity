@@ -40,7 +40,7 @@ __version__ = "2017.1"
 __date__ = "Aug 24, 2017"
 __maintainer__ = "Patrick Hohenecker"
 __email__ = "mail@paho.at"
-__status__ = "Development"
+__status__ = "Production"
 
 
 def sanitize_range_fn(
