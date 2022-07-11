@@ -60,7 +60,7 @@ class SanityChecksTest(unittest.TestCase):
         # CHECK: legal invocations return fully qualified type names
         self.assertEqual(san._fully_qualified_name(str), "builtins.str")
         self.assertEqual(san._fully_qualified_name(type), "builtins.type")
-        self.assertEqual(san._fully_qualified_name(collections.Iterable), "collections.abc.Iterable")
+        self.assertEqual(san._fully_qualified_name(collections.abc.Iterable), "collections.abc.Iterable")
 
     # noinspection PyTypeChecker
     def test_sanitize_iterable(self):
