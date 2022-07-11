@@ -66,7 +66,7 @@ def _fully_qualified_name(t: type) -> str:
 # noinspection PyTypeChecker
 def sanitize_iterable(
         arg_name: str,
-        arg_value: collections.Iterable,
+        arg_value: collections.abc.Iterable,
         elements_type: typing.Union[type, typing.Iterable[type]]=None,
         target_length: int=None,
         min_length: int=None,
@@ -85,8 +85,8 @@ def sanitize_iterable(
 
     Args:
         arg_name (str): The name of the parameter being sanitized.
-        arg_value (collections.Iterable): The ``Iterable`` that is subject of investigation.
-        elements_type (type or collections.Iterable[type], optional): A target type or an ``Iterable`` of types that
+        arg_value (collections.abc.Iterable): The ``Iterable`` that is subject of investigation.
+        elements_type (type or collections.abc.Iterable[type], optional): A target type or an ``Iterable`` of types that
             the elements of ``arg_value`` may have.
         target_length (int, optional): The target length that ``arg_value`` is supposed to have. This option cannot be
             combined with ``min_length`` or ``max_length``.
@@ -107,10 +107,10 @@ def sanitize_iterable(
 
     sanitize_type("arg_name", arg_name, str)
     sanitize_type("none_allowed", none_allowed, bool)
-    sanitize_type("arg_value", arg_value, collections.Iterable, none_allowed=none_allowed)
+    sanitize_type("arg_value", arg_value, collections.abc.Iterable, none_allowed=none_allowed)
 
     if elements_type is not None:
-        if isinstance(elements_type, collections.Iterable):
+        if isinstance(elements_type, collections.abc.Iterable):
             for t in elements_type:
                 sanitize_type(
                         "elements_type",
@@ -158,7 +158,7 @@ def sanitize_iterable(
     if (
             arg_value is not None and
             (target_length is not None or min_length is not None or max_length is not None) and
-            not isinstance(arg_value, collections.Sized)
+            not isinstance(arg_value, collections.abc.Sized)
     ):
         raise TypeError(
                 (
@@ -181,7 +181,7 @@ def sanitize_iterable(
     # create error messages
     if error_msg is None:
         none_err = "The elements of <{arg_name}> must not be None!"
-        if isinstance(elements_type, collections.Iterable):
+        if isinstance(elements_type, collections.abc.Iterable):
             type_err_msg = \
                     "The types of the elements of <{arg_name}> have to be any of " + \
                     "[" + ", ".join([t.__name__ for t in elements_type]) + "], " + \
@@ -361,7 +361,7 @@ def sanitize_type(
     Args:
         arg_name (str): The name of the parameter being sanitized.
         arg_value: The value that is subject of investigation.
-        target_type (type or collections.Iterable[type]): A target type or an ``Iterable`` of types that ``arg_value``
+        target_type (type or collections.abc.Iterable[type]): A target type or an ``Iterable`` of types that ``arg_value``
             may have.
         none_allowed (bool, optional): Indicates whether ``arg_value`` is allowed to be ``None``.
         error_msg (str, optional): An optional error message that is provided if an error is raised.
@@ -377,7 +377,7 @@ def sanitize_type(
                         _fully_qualified_name(type(arg_name))
                 )
         )
-    if isinstance(target_type, collections.Iterable):
+    if isinstance(target_type, collections.abc.Iterable):
         for t in target_type:
             if not isinstance(t, type):
                 raise TypeError(
@@ -499,7 +499,7 @@ def sanitize_value(
 
     # //////// CASE 1: target_value is not expanded
 
-    if not expand_target or not isinstance(target_value, collections.Iterable):
+    if not expand_target or not isinstance(target_value, collections.abc.Iterable):
         if (
                 (complement and equality_fn(arg_value, target_value)) or
                 (not complement and not equality_fn(arg_value, target_value))

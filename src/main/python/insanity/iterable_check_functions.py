@@ -148,7 +148,7 @@ def sanitize_value_fn(
 
     # create error message
     if error_msg is None:
-        if not expand_target or not isinstance(target_value, collections.Iterable):
+        if not expand_target or not isinstance(target_value, collections.abc.Iterable):
             error_msg = (
                     "The elements of <{arg_name}> have to be %s {target_value}, but {arg_value} was encountered!"
             ) % ("different from" if complement else "equal to")
